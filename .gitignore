@@ -1,0 +1,23 @@
+# raw trace shards are large and re-downloadable; keep out of git
+data/raw/
+
+# virtualenv
+.venv/
+
+# python artifacts
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# transient local dev logs (headless browser + local http server)
+results/chrome_*.log
+results/dashboard_server.log
+
+# stdout dumps from training runs; the real data is qvalues_*.csv / rewards_*.csv
+results/train_logs/train*.log
+
+# headless-browser DOM dump, used once to verify the dashboard renders
+results/dashboard_dom.html
+
+# local-only demo script, kept on disk but not part of the project repo
+docs/demo_script.md
