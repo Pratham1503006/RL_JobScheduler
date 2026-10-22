@@ -1,0 +1,275 @@
+{
+ "scenarios": [
+  "light",
+  "heavy",
+  "bursty"
+ ],
+ "policies": [
+  "Round Robin",
+  "First-Fit",
+  "Best-Fit",
+  "DQN",
+  "Double DQN",
+  "PPO",
+  "A2C"
+ ],
+ "traces": {
+  "light": {
+   "Round Robin": "../../results/traces/round_robin_light_0.json",
+   "First-Fit": "../../results/traces/first_fit_light_0.json",
+   "Best-Fit": "../../results/traces/best_fit_light_0.json",
+   "DQN": "../../results/traces/dqn_seed0_light_0.json",
+   "Double DQN": "../../results/traces/ddqn_seed0_light_0.json",
+   "PPO": "../../results/traces/ppo_seed0_light_0.json",
+   "A2C": "../../results/traces/a2c_seed0_light_0.json"
+  },
+  "heavy": {
+   "Round Robin": "../../results/traces/round_robin_heavy_0.json",
+   "First-Fit": "../../results/traces/first_fit_heavy_0.json",
+   "Best-Fit": "../../results/traces/best_fit_heavy_0.json",
+   "DQN": "../../results/traces/dqn_seed0_heavy_0.json",
+   "Double DQN": "../../results/traces/ddqn_seed0_heavy_0.json",
+   "PPO": "../../results/traces/ppo_seed0_heavy_0.json",
+   "A2C": "../../results/traces/a2c_seed0_heavy_0.json"
+  },
+  "bursty": {
+   "Round Robin": "../../results/traces/round_robin_bursty_0.json",
+   "First-Fit": "../../results/traces/first_fit_bursty_0.json",
+   "Best-Fit": "../../results/traces/best_fit_bursty_0.json",
+   "DQN": "../../results/traces/dqn_seed0_bursty_0.json",
+   "Double DQN": "../../results/traces/ddqn_seed0_bursty_0.json",
+   "PPO": "../../results/traces/ppo_seed0_bursty_0.json",
+   "A2C": "../../results/traces/a2c_seed0_bursty_0.json"
+  }
+ },
+ "summary": {
+  "columns": [
+   "policy",
+   "scenario",
+   "avg_wait",
+   "p95_wait",
+   "avg_cpu_util",
+   "completion_rate",
+   "invalid_actions",
+   "makespan"
+  ],
+  "rows": [
+   [
+    "heuristic.round_robin",
+    "light",
+    3084.482,
+    6871.905,
+    0.399,
+    1.0,
+    0.0,
+    28117.536
+   ],
+   [
+    "heuristic.round_robin",
+    "heavy",
+    4190.516,
+    7630.153,
+    0.882,
+    1.0,
+    0.0,
+    12724.06
+   ],
+   [
+    "heuristic.round_robin",
+    "bursty",
+    46871.393,
+    76782.931,
+    0.24,
+    1.0,
+    0.0,
+    92018.622
+   ],
+   [
+    "heuristic.first_fit",
+    "light",
+    3090.124,
+    6871.905,
+    0.399,
+    1.0,
+    0.0,
+    28117.536
+   ],
+   [
+    "heuristic.first_fit",
+    "heavy",
+    4193.358,
+    7630.153,
+    0.881,
+    1.0,
+    0.0,
+    12736.838
+   ],
+   [
+    "heuristic.first_fit",
+    "bursty",
+    46876.179,
+    76793.71,
+    0.24,
+    1.0,
+    0.0,
+    92043.541
+   ],
+   [
+    "heuristic.best_fit",
+    "light",
+    3090.56,
+    6871.905,
+    0.399,
+    1.0,
+    0.0,
+    28117.536
+   ],
+   [
+    "heuristic.best_fit",
+    "heavy",
+    4191.928,
+    7630.153,
+    0.881,
+    1.0,
+    0.0,
+    12731.53
+   ],
+   [
+    "heuristic.best_fit",
+    "bursty",
+    46874.441,
+    76792.772,
+    0.24,
+    1.0,
+    0.0,
+    92028.889
+   ],
+   [
+    "rl.dqn",
+    "light",
+    34236.469,
+    55917.191,
+    0.181,
+    1.0,
+    1992.667,
+    68877.018
+   ],
+   [
+    "rl.dqn",
+    "heavy",
+    35790.974,
+    61284.992,
+    0.181,
+    1.0,
+    1992.667,
+    68877.018
+   ],
+   [
+    "rl.dqn",
+    "bursty",
+    317667.809,
+    508863.673,
+    0.048,
+    1.0,
+    1989.667,
+    533200.366
+   ],
+   [
+    "rl.ddqn",
+    "light",
+    3829.489,
+    8278.426,
+    0.399,
+    1.0,
+    1372.667,
+    28117.536
+   ],
+   [
+    "rl.ddqn",
+    "heavy",
+    5130.878,
+    8747.395,
+    0.752,
+    1.0,
+    1404.0,
+    14999.518
+   ],
+   [
+    "rl.ddqn",
+    "bursty",
+    110909.499,
+    182051.045,
+    0.122,
+    0.963,
+    6867.333,
+    198008.204
+   ],
+   [
+    "rl.ppo",
+    "light",
+    36280.617,
+    70271.952,
+    0.165,
+    1.0,
+    1989.5,
+    86555.078
+   ],
+   [
+    "rl.ppo",
+    "heavy",
+    37846.747,
+    77954.019,
+    0.166,
+    1.0,
+    1990.0,
+    86550.955
+   ],
+   [
+    "rl.ppo",
+    "bursty",
+    312592.86,
+    512082.913,
+    0.069,
+    1.0,
+    1992.0,
+    541945.1
+   ],
+   [
+    "rl.a2c",
+    "light",
+    4931.427,
+    9979.389,
+    0.399,
+    1.0,
+    122.333,
+    28117.536
+   ],
+   [
+    "rl.a2c",
+    "heavy",
+    6247.324,
+    10557.983,
+    0.684,
+    1.0,
+    184.0,
+    16395.783
+   ],
+   [
+    "rl.a2c",
+    "bursty",
+    65113.216,
+    105117.879,
+    0.182,
+    1.0,
+    1720.333,
+    121841.333
+   ]
+  ]
+ },
+ "charts": [
+  "../results/charts/1_avg_wait_per_scenario.png",
+  "../results/charts/2_avg_cpu_util_per_scenario.png",
+  "../results/charts/3_utilization_timeline_heavy.png",
+  "../results/charts/4_qvalue_overestimation.png"
+ ]
+}
