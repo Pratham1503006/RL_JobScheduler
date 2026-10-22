@@ -1,0 +1,74 @@
+{
+  "reward_weights": {
+    "W_PLACE": 1.0,
+    "W_WAIT": 1.0,
+    "W_INVALID": 20.0,
+    "W_UTIL": 0.1,
+    "WAIT_NORM": 60.0,
+    "QUEUE_NORM": 50.0
+  },
+  "reward_weight_change_note": "W_INVALID raised once per plan 7.6 (5.0 -> 20.0, 2026-10-12) after full training showed invalid-action rates >20% for all four algorithms; A2C recovered to ~2.6% invalid after retraining.",
+  "net_arch": [
+    128,
+    128
+  ],
+  "policy": "MlpPolicy",
+  "device": "cpu",
+  "seeds_per_algo": 3,
+  "per_algorithm": {
+    "dqn": {
+      "learning_rate": 3e-05,
+      "buffer_size": 50000,
+      "learning_starts": 1000,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "train_freq": 4,
+      "gradient_steps": 1,
+      "target_update_interval": 500,
+      "exploration_fraction": 0.3,
+      "exploration_final_eps": 0.05,
+      "max_grad_norm": 1.0,
+      "total_timesteps": 150000
+    },
+    "ddqn": {
+      "learning_rate": 0.0001,
+      "buffer_size": 50000,
+      "learning_starts": 1000,
+      "batch_size": 64,
+      "gamma": 0.99,
+      "train_freq": 4,
+      "gradient_steps": 1,
+      "target_update_interval": 500,
+      "exploration_fraction": 0.3,
+      "exploration_final_eps": 0.05,
+      "total_timesteps": 150000
+    },
+    "ppo": {
+      "learning_rate": 0.0003,
+      "n_steps": 1024,
+      "batch_size": 64,
+      "n_epochs": 10,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "clip_range": 0.2,
+      "ent_coef": 0.01,
+      "total_timesteps": 200000
+    },
+    "a2c": {
+      "learning_rate": 0.0007,
+      "n_steps": 16,
+      "gamma": 0.99,
+      "gae_lambda": 0.95,
+      "ent_coef": 0.01,
+      "vf_coef": 0.5,
+      "total_timesteps": 200000
+    }
+  },
+  "dqn_note": "DQN (vanilla) additionally tuned per plan 7.6 Plan-B: learning_rate 1e-4->3e-5 and max_grad_norm clipped to 1.0. DQN still selects invalid actions in ~50% of eval steps across seeds 0-2 (Q overestimation collapse; see qvalues_dqn_seed*.csv) -- flagged for the Phase 5 report.",
+  "ppo_seed2": {
+    "timesteps": 200000
+  },
+  "evaluation_notes": {
+    "ppo_seed2": "EXCLUDED from Phase 5 evaluation: two independent training runs (original + identical-hyperparam retrain on 2026-10-13, 200k steps) both degenerate on the light scenario (completion_rate 0.002/0.017, ~20k invalid actions per episode, stalls to truncation). Same seed and hyperparameters reproduce the collapse; per plan 7.6 no reward/hyperparam changes after Phase 4, so the run is excluded instead of tuned. PPO is evaluated on seeds 0 and 1."
+  }
+}
