@@ -1,0 +1,27 @@
+{
+  "req_scale": 10.0,
+  "train_pool_jobs": 143999,
+  "test_pool_jobs": 61714,
+  "scenarios": {
+    "light": {
+      "target_rho": 0.4,
+      "actual_rho": 0.4,
+      "jobs": 2000,
+      "arrival_factor": 37.6083
+    },
+    "heavy": {
+      "target_rho": 0.9,
+      "actual_rho": 0.9,
+      "jobs": 2000,
+      "arrival_factor": 16.7148
+    },
+    "bursty": {
+      "target_rho": 0.6,
+      "actual_rho": 0.6,
+      "jobs": 2000,
+      "window_cv": 3.069643282590494,
+      "pool_cv": 3.3254322776804317,
+      "arrival_factor": 34.7873
+    }
+  }
+}
