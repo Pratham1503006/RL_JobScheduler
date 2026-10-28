@@ -1,0 +1,21 @@
+Zero-order Sugeno rule base: default FIS vs GA-FIS (selected seed 1)
+leftover | load   | pressure | default z | tuned z
+---------+--------+----------+-----------+--------
+TIGHT    | LOW    | CALM     |      0.50 |    0.49
+TIGHT    | LOW    | BUSY     |      0.75 |    0.94
+TIGHT    | MEDIUM | CALM     |      0.35 |    0.11
+TIGHT    | MEDIUM | BUSY     |      0.90 |    0.95
+TIGHT    | HIGH   | CALM     |      0.20 |    0.05
+TIGHT    | HIGH   | BUSY     |      1.00 |    1.00
+MEDIUM   | LOW    | CALM     |      0.70 |    0.60
+MEDIUM   | LOW    | BUSY     |      0.50 |    0.40
+MEDIUM   | MEDIUM | CALM     |      0.65 |    0.62
+MEDIUM   | MEDIUM | BUSY     |      0.40 |    0.07
+MEDIUM   | HIGH   | CALM     |      0.50 |    0.49
+MEDIUM   | HIGH   | BUSY     |      0.15 |    0.00
+LOOSE    | LOW    | CALM     |      1.00 |    0.94
+LOOSE    | LOW    | BUSY     |      0.25 |    0.30
+LOOSE    | MEDIUM | CALM     |      0.80 |    0.88
+LOOSE    | MEDIUM | BUSY     |      0.30 |    0.34
+LOOSE    | HIGH   | CALM     |      0.60 |    0.57
+LOOSE    | HIGH   | BUSY     |      0.35 |    0.23

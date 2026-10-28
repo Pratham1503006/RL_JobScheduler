@@ -80,6 +80,91 @@ seeded (0/1/2). Full per-algorithm hyperparameters in
 - **PPO:** lr 3e-4, clip 0.2, ent 0.01, 200k steps. **A2C:** lr 7e-4,
   n_steps 16, 200k steps.
 
+### 5.1 SC1 — Fuzzy Inference Scheduler (FIS)
+
+A hand-designed, interpretable, non-learning scheduler (`softcomputing/fuzzy.py`,
+`softcomputing/fis_policy.py`). For every server that can fit the head job it
+computes a suitability score in [0, 1] and picks the highest-scoring server;
+it returns WAIT only when no server fits, so it is capacity-aware exactly like
+the heuristics (`invalid_actions` is always 0).
+
+**Inputs (per candidate server, all in [0, 1])**
+
+| input | definition | linguistic sets |
+|---|---|---|
+| `leftover` | `((free_cpu - req_cpu) + (free_mem - req_mem)) / 2` | TIGHT, MEDIUM, LOOSE |
+| `load` | `((1 - free_cpu) + (1 - free_mem)) / 2` | LOW, MEDIUM, HIGH |
+| `pressure` | `min(queue_len / QUEUE_NORM, 1)` | CALM, BUSY |
+
+**Membership functions** (trapezoids/shoulders, `trap(x,a,b,c,d)`; triangles are
+`trap(a,b,b,d)`). Default breakpoints, from `config.FUZZY_CUTS_DEFAULT`:
+
+| input | set | trapezoid |
+|---|---|---|
+| leftover | TIGHT | (0.0, 0.0, 0.1, 0.35) |
+| leftover | MEDIUM | (0.1, 0.35, 0.35, 0.6) |
+| leftover | LOOSE | (0.35, 0.6, 1.0, 1.0) |
+| load | LOW | (0.0, 0.0, 0.2, 0.5) |
+| load | MEDIUM | (0.2, 0.5, 0.5, 0.8) |
+| load | HIGH | (0.5, 0.8, 1.0, 1.0) |
+| pressure | CALM | (0.0, 0.0, 0.2, 0.6) |
+| pressure | BUSY | (0.2, 0.6, 1.0, 1.0) |
+
+The sets are full-coverage: at every point in [0,1] at least one set is active
+(`tests/test_fuzzy.py`). Functions: `results/softcomputing/fis_default_memberships.png`.
+
+**Rule base (18 = 3 x 3 x 2, zero-order Sugeno).** Rule strength is
+`min(mu_leftover, mu_load, mu_pressure)`; the final score is
+`sum(w_r z_r) / sum(w_r)` (0 if no rule fires). The design logic is the
+pressure switch: under **BUSY** prefer packing (keep big free blocks for large
+waiting jobs, so TIGHT+HIGH scores 1.00 and LOOSE+LOW only 0.25); under
+**CALM** prefer balancing (spread jobs and leave headroom, so LOOSE+LOW scores
+1.00 and TIGHT+HIGH only 0.20); MEDIUM leftover + HIGH load is the
+fragmentation trap and gets the lowest BUSY score (0.15).
+
+| leftover | load | z (CALM) | z (BUSY) |
+|---|---|---|---|
+| TIGHT | LOW | 0.50 | 0.75 |
+| TIGHT | MEDIUM | 0.35 | 0.90 |
+| TIGHT | HIGH | 0.20 | 1.00 |
+| MEDIUM | LOW | 0.70 | 0.50 |
+| MEDIUM | MEDIUM | 0.65 | 0.40 |
+| MEDIUM | HIGH | 0.50 | 0.15 |
+| LOOSE | LOW | 1.00 | 0.25 |
+| LOOSE | MEDIUM | 0.80 | 0.30 |
+| LOOSE | HIGH | 0.60 | 0.35 |
+
+### 5.2 SC2 — GA-Tuned Fuzzy Scheduler (GA-FIS)
+
+The same FIS structure and the same 18 rules; a real-valued genetic algorithm
+(`softcomputing/ga.py`, `softcomputing/train_ga.py`) evolves the membership
+breakpoints and the rule consequents.
+
+- **Chromosome (24 genes):** two cut points `(p1, p2)`, `0 < p1 < p2 < 1`, for
+  each of the three inputs, plus the 18 consequents `z_r` in [0,1]. The cut
+  points are mapped to ordered, full-coverage sets: for a three-set input,
+  `(0,0,p1,mid)`, `(p1,mid,mid,p2)`, `(mid,p2,1,1)` with `mid=(p1+p2)/2`; for
+  the two-set `pressure`, `(0,0,p1,p2)` and `(p1,p2,1,1)`. `repair()` sorts
+  and clips every chromosome (minimum gap 0.02, consequents in [0,1]), so no
+  chromosome can produce an ill-formed fuzzy system.
+- **Initialisation:** individual 0 is the hand-designed FIS chromosome; the
+  other 29 are that chromosome plus Gaussian noise (sigma 0.10). GA-FIS can
+  therefore never start worse than FIS.
+- **GA settings (`config.py`):** population 30, generations 30, tournament
+  selection of size 3, BLX-alpha crossover (alpha 0.3, probability 0.8),
+  Gaussian mutation (sigma 0.05 per gene, probability 0.1), elitism 2,
+  `multiprocessing.Pool` population evaluation.
+- **Fitness (maximised):** `-(mean avg_wait) - 1e5 * mean(invalid_actions)`
+  on five fixed 500-job windows from `data/scenarios/train_pool.csv`,
+  rescaled to rho targets evenly spaced over [0.6, 1.0]. The same episodes are
+  used for every chromosome and every GA seed, so fitness differences come
+  from the chromosome, not episode luck.
+- **Leakage rule:** `_assert_train_only()` refuses any path other than
+  `train_pool.csv`; the light/heavy/bursty scenarios are never shown to the
+  GA. The final chromosome is selected by *training* fitness only; all three
+  seeds are reported separately as a robustness check.
+
+
 ## 6. Experimental setup
 
 - **Request scaling:** raw requests are ~2-10% of a machine; `REQ_SCALE=10`
@@ -93,33 +178,52 @@ seeded (0/1/2). Full per-algorithm hyperparameters in
 - **Evaluation:** heuristics are deterministic (1 episode, invalid_actions=0,
   completion 1.0); RL acts `deterministic=True`, one episode per trained seed
   (DQN/DDQN/A2C x3 seeds, PPO x2 — seed 2 excluded, see results/analysis.md).
+- **Soft-computing evaluation:** FIS and GA-FIS are deterministic (one episode
+  per scenario, invalid_actions=0), run through the same `agents.evaluate`
+  loop. GA-FIS uses the chromosome with the best *training* fitness across the
+  three GA seeds; all three seed chromosomes are also evaluated on the
+  held-out scenarios in a supplementary robustness table
+  (`results/ga_logs/ga_seed_robustness.csv`), never for selection.
+- **GA training:** population 30 x 30 generations x 5 fixed episodes x 3 seeds,
+  CPU-only with a multiprocessing pool. Episodes are 500-job contiguous
+  windows from `data/scenarios/train_pool.csv` rescaled to rho targets evenly
+  spaced over [0.6, 1.0]; the same episodes are shared by every chromosome and
+  every GA seed.
 
 ## 7. Results
 
 Full table `results/summary_table.csv` (mean ± std across seeds),
-plots `results/charts/1-4*.png`. **Average wait (s):**
+plots `results/charts/1-6*.png`. **Average wait (s):**
 
 | policy | light | heavy | bursty | util heavy | invalid/ep (heavy) |
 |---|---|---|---|---|---|
 | Round Robin | 3,084 | 4,190 | 46,871 | 0.882 | 0 |
 | First-Fit | 3,090 | 4,193 | 46,876 | 0.881 | 0 |
 | Best-Fit | 3,091 | 4,192 | 46,874 | 0.881 | 0 |
+| **FIS** (soft) | 3,090 | 4,213 | **46,869** | 0.875 | 0 |
+| **GA-FIS** (soft) | 3,091 | 4,206 | 46,877 | 0.877 | 0 |
 | DQN | 34,236 | 35,791 | 317,668 | 0.181 | 1,993 |
 | Double DQN | 3,829 | 5,131 | 110,909 | 0.752 | 1,404 |
 | PPO | 36,281 | 37,847 | 312,593 | 0.166 | 1,990 |
 | A2C | 4,931 | 6,247 | 65,113 | 0.684 | 184 |
 
-Round Robin wins every scenario; the LLN-style "clean winner" is not RL here —
-see discussion. Statistical honesty: RL seed spreads are 1-3% on average but
-explode on bursty (DDQN std 42,627 on 110,909 mean, one truncated seed with
-completion 0.963), while the heuristic-vs-RL gaps (~22% to >7x) dwarf seed
-noise; DQN vs PPO differences on identical scenarios are within each other's
-spread — treat as tie.
+Round Robin wins `light` and `heavy` by a hair (0.2% / 0.5% over the
+capacity-aware field); the FIS is the single fastest policy on `bursty`
+(46,869 s vs 46,871 s for Round Robin). The two soft-computing schedulers are
+within 0.5% of the best heuristic on every scenario and both complete 100% of
+jobs with 0 invalid actions. GA tuning improved the *training* fitness
+(-2729.4602 -> -2727.3650) but the held-out difference vs the hand-designed FIS
+is ±0.17% per scenario: a tie (see 8.2). Statistical honesty: RL seed spreads
+are 1-3% on average but explode on bursty (DDQN std 42,627 on 110,909 mean, one
+truncated seed with completion 0.963), while the heuristic/soft-vs-RL gaps
+(~22% to >7x) dwarf seed noise; DQN vs PPO differences on identical scenarios
+are within each other's spread — treat as tie.
 
 ## 8. Discussion
 
-**Who won where and why.** All three heuristics tie within ~0.2%; RL never
-beats them. Data-backed reason: every RL agent makes ~1,400-2,000 invalid picks per
+**Who won where and why.** All three heuristics and both soft-computing
+policies tie within ~0.5%; RL never beats any of them. Data-backed reason:
+every RL agent makes ~1,400-2,000 invalid picks per
 2,000-job episode, and each invalid pick costs one completion-interval of
 advanced time; the measured gap to Round Robin is +745 s (light, DDQN) and
 +940 s (heavy, DDQN), while the far larger DQN/PPO gaps (31-271k s) reflect
@@ -128,6 +232,44 @@ shows packing in this environment is essentially trivial (below-50% items
 never create unavoidable fragmentation), so the only remaining learning
 signal is queue discipline — where holding the head job costs more relative
   to the tiny placement gains.
+
+**Does GA tuning help the fuzzy scheduler?** On the training episodes the
+three GA runs all beat the hand-designed chromosome: default -2729.4602 vs
+-2727.6631 / -2727.3650 / -2728.6244 (`results/ga_logs/ga_seed_summary.csv`).
+On the held-out scenarios the improvement does not carry over. GA-FIS
+(selected by training fitness, seed 1) is +0.04% on `light` (3,090.8 vs
+3,089.6 s), -0.17% on `heavy` (4,205.6 vs 4,212.9 s) and +0.02% on `bursty`
+(46,877.1 vs 46,869.0 s) relative to FIS. The honest answer is **no reliable
+held-out gain**. WHY: the FIS action is an `argmax` over fuzzy scores, so the
+fitness is piecewise-constant in most of the 24 genes — many mutations change
+no placement at all, and the 30x30 search mostly finds tiny decision-boundary
+shifts. The tuned membership functions *are* visibly different (chart 6), so
+the GA is working; the objective is just nearly flat.
+
+**GA seed selection is not a test-set oracle.** Because selection uses
+training fitness only (addendum 4.6), the robustness table is the honest check:
+the three chromosomes are interchangeable on the held-out scenarios (mean avg
+wait 18,059.56 / 18,057.85 / 18,055.46 s for seeds 0/1/2, a 0.02% spread), and
+the selected seed 1 is in the middle. Picking the best test-scenario seed
+(seed 2) would have been leakage; the fact that it would have looked 2.4 s
+better is exactly why the rule exists.
+
+**Soft computing vs heuristics.** FIS lands in the same ballpark as Best-Fit,
+as the addendum expected: +0.17% vs Round Robin on `light`, +0.53% on `heavy`,
+and -0.005% on `bursty` (fastest of all nine policies there). The three
+capacity-aware families are therefore statistically indistinguishable on these
+workloads, and the 0.2-0.5% differences are far below any seed noise. GA-FIS
+is also within 0.36% of Round Robin everywhere. Both soft policies have
+`completion_rate=1.0` and `invalid_actions=0` on every scenario by
+construction (`softcomputing/fis_policy.py` only considers `can_fit` servers).
+
+**RL vs the best soft-computing policy.** RL loses on every scenario: Double
+DQN is +24% on `light` (3,829 vs 3,090 s) and +22% on `heavy` (5,131 vs
+4,213 s), and the best RL agent on `bursty` (A2C) is +38.9% (65,113 vs
+46,869 s). The gaps are 1-2 orders of magnitude larger than the RL seed
+spreads, so this is not a seed artifact: the fuzzy policies get the capacity
+discipline for free, while every RL agent spends ~1,400-2,000 actions per
+2,000-job episode on invalid placements (section 8, first paragraph).
 
 **DQN vs Double DQN (the controlled experiment).** Same hyperparameters, same
 budget, different target computation only:
@@ -161,6 +303,16 @@ budget, different target computation only:
    `hyperparameters.json` -> `evaluation_notes`) is a small sample.
 7. Heuristic tie means the experiment mostly differentiates *how badly* RL
    handles the env, not which classical rule is better.
+8. The FIS inputs (three) and its 18-rule base are hand-designed; a different
+   rule set would change FIS and therefore the GA's starting point.
+9. The GA trains on five fixed 500-job windows from a limited load range
+   (rho 0.6-1.0). Its fitness is piecewise-constant because FIS decisions are
+   `argmax`, so tuning gains are small and do not reliably transfer to the
+   held-out scenarios; the three GA seeds are reported as a robustness check.
+10. Soft-computing policies, like the heuristics, are capacity-aware by
+    construction and cannot make invalid choices, so part of their advantage
+    over RL is the absence of an invalid-action failure mode rather than
+    better placement.
 
 ## 10. Future work
 
@@ -168,4 +320,7 @@ Action masking (`sb3_contrib.MaskablePPO` — removes the invalid-action class
 entirely and typically speeds learning), heterogeneous server capacities,
 priority queues + preemption, continuous resource allocation
 (black-box placement), and curriculum on load (train rho-major scenarios
-separately).
+separately). For the soft-computing side: a smoother fitness (e.g. a softmax
+over server scores instead of a hard `argmax`) would give the GA a gradient to
+climb, and more training episodes / a wider rho range would test whether the
+tuned FIS generalizes.

@@ -1,0 +1,103 @@
+% ===========================================================================
+% Resume bullets -- RL Cloud Scheduler project
+%
+% Copy ONE version into your resume. Percent signs and underscores are escaped.
+% Version A: portable (standard itemize, works in any template)
+% Version B: Jake's Resume macros (\resumeProjectHeading, \resumeItem)
+% Version C: compact 3-bullet version for a one-page resume
+%
+% Every number below is traceable to results/summary_table.csv,
+% results/full_comparison.csv, results/ga_logs/ and tests/.
+% ===========================================================================
+
+
+% ---------------------------------------------------------------------------
+% Version A -- portable
+% ---------------------------------------------------------------------------
+\section*{Projects}
+\textbf{RL Cloud Scheduler} \hfill 2026\\
+\textit{Python, PyTorch, Stable-Baselines3, Gymnasium, React, pytest}
+\begin{itemize}
+  \item \textbf{Simulator + benchmark harness:} built an event-driven
+        cloud-scheduling environment (10 servers, 2{,}000-job scenarios derived
+        from the Google ClusterData2011-2 trace) and a shared
+        \texttt{policy(obs, env)} interface; benchmarked 9 schedulers across
+        heuristic, soft-computing, and reinforcement-learning families
+        (27 policy--scenario settings, 48 seeded runs).
+
+  \item \textbf{Fuzzy scheduler + genetic tuning:} designed a zero-order Sugeno
+        fuzzy inference system (3 linguistic inputs, 18 rules) and a 24-gene
+        genetic algorithm that tunes membership breakpoints and rule
+        consequents; enforced training-only model selection with an
+        assertion-based data-leakage guard and 3 independent GA seeds.
+
+  \item \textbf{RL implementation:} implemented DQN, Double DQN, PPO, and A2C
+        with Stable-Baselines3 and evaluated every policy through one harness
+        on average/p95 wait, CPU utilization, completion rate, invalid actions,
+        and makespan.
+
+  \item \textbf{Result:} showed RL was not necessary for this workload -- the
+        fuzzy scheduler matched the best heuristic within 0.53\% and posted the
+        lowest bursty-load wait (46{,}869\,s), while the strongest RL result was
+        still 21.8\% slower; traced the gap to invalid placements (up to
+        $\sim$2{,}000 per episode for DQN/PPO).
+
+  \item \textbf{Engineering:} built a React replay dashboard with a step-by-step
+        fuzzy decision inspector and 6 report figures, and added a 33-test
+        pytest suite covering the environment, Double DQN, fuzzy inference, and
+        GA operators; kept the pipeline reproducible from raw trace to dashboard.
+\end{itemize}
+
+
+% ---------------------------------------------------------------------------
+% Version B -- Jake's Resume (https://github.com/jakegut/resume)
+% Use only if your template defines these macros.
+% ---------------------------------------------------------------------------
+\resumeProjectHeading
+  {\textbf{RL Cloud Scheduler} $|$ \emph{Python, PyTorch, Stable-Baselines3, Gymnasium, React}}{2026}
+  \resumeItemListStart
+    \resumeItem{Built an event-driven cloud-scheduling simulator (10 servers,
+      2{,}000-job scenarios from Google ClusterData2011-2) and a shared
+      \texttt{policy(obs, env)} interface; benchmarked 9 schedulers across
+      heuristic, soft-computing, and RL families over 27 policy--scenario
+      settings (48 seeded runs).}
+    \resumeItem{Designed a zero-order Sugeno fuzzy scheduler (3 inputs, 18
+      rules) and a 24-gene genetic algorithm tuning membership breakpoints and
+      consequents, with training-only selection, an assertion-based leakage
+      guard, and 3 independent seeds.}
+    \resumeItem{Implemented DQN, Double DQN, PPO, and A2C and evaluated all
+      policies on average/p95 wait, CPU utilization, completion rate, invalid
+      actions, and makespan through one shared harness.}
+    \resumeItem{Showed RL was unnecessary: the fuzzy scheduler matched the best
+      heuristic within 0.53\% and had the lowest bursty-load wait (46{,}869\,s);
+      the strongest RL run was 21.8\% slower, with the gap traced to invalid
+      placements (up to $\sim$2{,}000 per episode for DQN/PPO).}
+    \resumeItem{Built a React replay dashboard with a fuzzy decision inspector
+      and 6 report figures; added a 33-test pytest suite and kept the pipeline
+      reproducible end to end.}
+  \resumeItemListEnd
+
+
+% ---------------------------------------------------------------------------
+% Version C -- compact (3 bullets)
+% ---------------------------------------------------------------------------
+\begin{itemize}
+  \item \textbf{RL Cloud Scheduler} --- built an event-driven 10-server
+        simulator from Google ClusterData2011-2 and a unified
+        \texttt{policy(obs, env)} harness; benchmarked 9 policies (3 heuristics,
+        FIS/GA-FIS, DQN/Double DQN/PPO/A2C) over 27 policy--scenario settings
+        and 48 seeded runs.
+  \item Designed an 18-rule Sugeno fuzzy scheduler plus a 24-gene genetic
+        algorithm for membership/rule tuning, with training-only selection and
+        an assertion-based leakage guard.
+  \item Demonstrated that the fuzzy scheduler matched the best heuristic within
+        0.53\% and beat every RL agent (best RL run 21.8\% slower), then shipped
+        a React decision-inspector dashboard and a 33-test suite.
+\end{itemize}
+
+
+% ---------------------------------------------------------------------------
+% Optional skills line
+% ---------------------------------------------------------------------------
+\textbf{Skills:} Python, NumPy, pandas, PyTorch, Stable-Baselines3, Gymnasium,
+fuzzy logic, genetic algorithms, React, Matplotlib, pytest, Git.
